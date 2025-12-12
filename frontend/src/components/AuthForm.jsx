@@ -1,6 +1,10 @@
 import Button from "@mui/material/button";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { APIConnector } from "../lib/api";
+import { useAuth } from "../context/AuthContext";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 export default function AuthForm({ type }) {
   const [formData, setFormData] = useState({
@@ -10,8 +14,34 @@ export default function AuthForm({ type }) {
     confirmPassword: "",
   });
 
-  const handleRegister = () => {
-    console.log("Register:", formData);
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  
+
+  const handleRegister = async (event) => {
+    event.preventDefault();
+      try{
+        if(type === "signup"){
+            const response = await APIConnector("POST", "/auth/register", formData);
+            console.log(response);
+            if (response.message) {
+                toast.success(response.message);
+                navigate("/login")
+            }
+        }
+        else{
+          const response = await APIConnector("POST", "/auth/login", formData);
+          console.log(response);
+          if (response.message) {
+              toast.success(response.message);
+              login(response.user, response.token)
+              navigate("/")
+          }
+        }
+      }
+      catch(err){
+         toast.error(err.response?.data?.message || "Something went wrong");
+      }
   };
 
   const handleChange = (e) => {
@@ -116,7 +146,7 @@ export default function AuthForm({ type }) {
                 type="submit"
                 className="w-full bg-accent-primary hover:bg-accent-primary/90 text-black rounded-lg"
               >
-                {type === "singup" ? "Create Account" : "Login"}
+                {type === "signup" ? "Create Account" : "Login"}
               </Button>
             </form>
           </div>
